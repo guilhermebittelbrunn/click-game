@@ -57,14 +57,16 @@ export default function WelcomeModal({ isOpen, onClose }: IWelcomeModalProps) {
                         <div className="bg-purple-500/20 p-3 rounded-lg">
                             <GiPunch className="w-8 h-8 text-purple-500" />
                         </div>
-                        <p className="text-left text-lg">Clique na bolsa de boxe para ganhar pontos</p>
+                        <p className="text-left text-lg">
+                            Clique no saco de pancada para ganhar socar ele e ganhar pontos e dinheiro
+                        </p>
                     </div>
 
                     <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl">
                         <div className="bg-blue-500/20 p-3 rounded-lg">
                             <FaCoins className="w-8 h-8 text-blue-500" />
                         </div>
-                        <p className="text-left text-lg">Use seus pontos para comprar upgrades</p>
+                        <p className="text-left text-lg">Use seu dinheiro para comprar upgrades</p>
                     </div>
 
                     <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-xl">

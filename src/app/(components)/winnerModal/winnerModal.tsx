@@ -171,11 +171,13 @@ export default function WinnerModal({ isOpen, onClose, money }: IWinnerModalProp
                                     )}
                                 </div>
                                 <p className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-yellow-500 bg-clip-text text-transparent">
-                                    {getClock(
-                                        Number(recordTime) < Number(timeToFinish)
-                                            ? Number(recordTime)
-                                            : timeToFinish,
-                                    )}
+                                    {isFirstTime
+                                        ? getClock(timeToFinish)
+                                        : getClock(
+                                              Number(recordTime) < Number(timeToFinish)
+                                                  ? Number(recordTime)
+                                                  : timeToFinish,
+                                          )}
                                 </p>
                             </div>
                         </div>

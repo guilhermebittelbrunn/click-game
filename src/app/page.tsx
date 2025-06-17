@@ -1,7 +1,7 @@
 'use client';
 
 import { Avatar, Badge } from 'antd';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { BsCoin } from 'react-icons/bs';
 import { getIcon } from './helpers/getIcons';
 import { FaRegStar } from 'react-icons/fa6';
@@ -16,15 +16,10 @@ interface IUpgrade {
     level: number;
     name: string;
     basePrice: number;
+    maxLevel?: number;
 }
 
 const defaultUpgrades: IUpgrade[] = [
-    {
-        price: 50,
-        level: 1,
-        name: 'Cursor',
-        basePrice: 50,
-    },
     {
         price: 30,
         level: 1,
@@ -32,10 +27,17 @@ const defaultUpgrades: IUpgrade[] = [
         basePrice: 30,
     },
     {
-        price: 20,
+        price: 50,
+        level: 1,
+        name: 'Cursor',
+        basePrice: 50,
+    },
+    {
+        price: 80,
         level: 0,
         name: 'Auto',
-        basePrice: 20,
+        basePrice: 80,
+        maxLevel: 8,
     },
 ];
 
@@ -45,6 +47,7 @@ export default function Home() {
     const [showWelcomeModal, setShowWelcomeModal] = useState(false);
     const [upgrades, setUpgrades] = useState<IUpgrade[]>(defaultUpgrades);
     const [showWinnerModal, setShowWinnerModal] = useState(false);
+    const target = useRef<HTMLDivElement>(null);
 
     const { cursorUpgrade, autoUpgrade, moneyUpgrade } = useMemo(() => {
         return {
@@ -62,11 +65,18 @@ export default function Home() {
         const clickValue = cursorUpgrade?.level || 1;
         const moneyClickValue = moneyUpgrade?.level || 1;
 
-        setScore((prev) => prev + clickValue);
-        setMoney((prev) => prev + moneyClickValue);
+        setScore((prev) => {
+            const newScore = prev + clickValue;
+            localStorage.setItem('score', newScore.toString());
+            return newScore;
+        });
 
-        localStorage.setItem('score', (score + clickValue).toString());
-        localStorage.setItem('money', (money + moneyClickValue).toString());
+        setMoney((prev) => {
+            const newMoney = prev + moneyClickValue;
+            localStorage.setItem('money', newMoney.toString());
+            return newMoney;
+        });
+
         localStorage.setItem('upgrades', JSON.stringify(upgrades));
 
         if (score === 1) {
@@ -77,7 +87,38 @@ export default function Home() {
         if (score >= 500) {
             handleWinner();
         }
-    }, [cursorUpgrade?.level, moneyUpgrade?.level, score, money, upgrades]);
+    }, [cursorUpgrade?.level, moneyUpgrade?.level, score, upgrades]);
+
+    const handlePunch = useCallback(() => {
+        target.current?.classList.add('punch-animation');
+        handleClick();
+        setTimeout(() => {
+            target.current?.classList.remove('punch-animation');
+        }, 200);
+    }, [handleClick]);
+
+    const handleRobotPunch = useCallback(() => {
+        const clickValue = cursorUpgrade?.level || 1;
+        const moneyClickValue = moneyUpgrade?.level || 1;
+
+        setScore((prev) => {
+            const newScore = prev + clickValue;
+            localStorage.setItem('score', newScore.toString());
+            return newScore;
+        });
+
+        setMoney((prev) => {
+            const newMoney = prev + moneyClickValue;
+            localStorage.setItem('money', newMoney.toString());
+            return newMoney;
+        });
+
+        localStorage.setItem('upgrades', JSON.stringify(upgrades));
+
+        if (score >= 500) {
+            handleWinner();
+        }
+    }, [cursorUpgrade?.level, moneyUpgrade?.level, score, upgrades]);
 
     const handleWinner = () => {
         localStorage.setItem('dateEnd', new Date().toISOString());
@@ -85,6 +126,10 @@ export default function Home() {
     };
 
     const handleUpgrade = (upgrade: IUpgrade) => {
+        if (upgrade.maxLevel && upgrade.level >= upgrade.maxLevel) {
+            return;
+        }
+
         if (money >= upgrade.price) {
             setMoney((prev) => prev - upgrade.price);
             setUpgrades((prev) => {
@@ -158,62 +203,83 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-            <Image
-                src={boxingBag}
-                alt="boxing bag"
-                width={400}
-                className="hover:cursor-pointer transition-transform"
-                onClick={(e) => {
-                    const target = e.currentTarget;
-                    target.classList.add('punch-animation');
-                    handleClick();
-                    setTimeout(() => {
-                        target.classList.remove('punch-animation');
-                    }, 300);
-                }}
-            />
-            {robots.length > 0 ? (
-                <div className="flex flex-row justify-center gap-6">
-                    {robots.map((robot) => (
-                        <Robot key={robot} onTick={handleClick} />
-                    ))}
+            <div className="relative">
+                <div ref={target} className="relative z-10">
+                    <Image
+                        src={boxingBag}
+                        alt="boxing bag"
+                        width={340}
+                        className="hover:cursor-pointer transition-transform"
+                        onClick={handlePunch}
+                    />
                 </div>
-            ) : (
-                ''
-            )}
+                {robots.length > 0 && (
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px]">
+                        {robots.map((idx) => {
+                            const angle = idx * (360 / robots.length) * (Math.PI / 180);
+                            const radius = 180;
+                            const x = Math.cos(angle) * radius;
+                            const y = Math.sin(angle) * radius;
+
+                            return (
+                                <div
+                                    key={`robot-${robots.length}-${idx}`}
+                                    className="absolute"
+                                    style={{
+                                        left: `calc(50% + ${x}px)`,
+                                        top: `calc(50% + ${y}px)`,
+                                        transform: 'translate(-50%, -50%)',
+                                    }}
+                                >
+                                    <Robot onTick={handleRobotPunch} enabled={!showWinnerModal} />
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
             <div className="mt-2 rounded-lg p-3 w-full max-w-lg">
                 <div className="flex flex-row justify-center gap-6">
-                    {upgrades.map((upgrade) => (
-                        <div
-                            key={upgrade.name}
-                            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg
+                    {upgrades.map((upgrade) => {
+                        const isMaxLevel = upgrade.maxLevel && upgrade.level >= upgrade.maxLevel;
+                        return (
+                            <div
+                                key={upgrade.name}
+                                className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg
                                      ${
-                                         money >= upgrade.price
+                                         isMaxLevel
+                                             ? 'bg-amber-600'
+                                             : money >= upgrade.price
                                              ? 'bg-white/20 hover:bg-white/30'
                                              : 'bg-white/10 opacity-50'
                                      }
                                      transition-all duration-200 cursor-pointer min-w-[80px]`}
-                            onClick={() => handleUpgrade(upgrade)}
-                        >
-                            <Badge count={upgrade.level} size="default" className="mb-1">
-                                <Avatar
-                                    shape="square"
-                                    size={40}
-                                    className="bg-amber-400/20"
-                                    icon={
-                                        <div className="w-6 h-6 text-amber-400 font-bold flex items-center justify-center">
-                                            {getIcon(upgrade.name)}
-                                        </div>
-                                    }
-                                />
-                            </Badge>
-                            <h3 className="text-sm font-bold text-white mb-0.5">{upgrade.name}</h3>
-                            <div className="flex items-center justify-center gap-1">
-                                <BsCoin className="w-3 h-3 text-amber-400" />
-                                <p className="text-xs text-amber-400 font-bold">{upgrade.price}</p>
+                                onClick={() => handleUpgrade(upgrade)}
+                            >
+                                <Badge count={!isMaxLevel ? upgrade.level : ''} size="default" className="mb-1">
+                                    <Avatar
+                                        shape="square"
+                                        size={40}
+                                        className="bg-amber-400/20"
+                                        icon={
+                                            <div className="w-6 h-6 text-amber-400 font-bold flex items-center justify-center">
+                                                {getIcon(upgrade.name)}
+                                            </div>
+                                        }
+                                    />
+                                </Badge>
+                                <h3 className="text-sm font-bold text-white mb-0.5">{upgrade.name}</h3>
+                                {isMaxLevel ? (
+                                    <p className="text-xs text-amber-400 font-bold">MAX</p>
+                                ) : (
+                                    <div className="flex items-center justify-center gap-1">
+                                        <BsCoin className="w-3 h-3 text-amber-400" />
+                                        <p className="text-xs text-amber-400 font-bold">{upgrade.price}</p>
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>
