@@ -4,7 +4,7 @@ import { Modal } from 'antd';
 import { FaTrophy, FaCoins } from 'react-icons/fa';
 import confetti from 'canvas-confetti';
 import { useEffect, useMemo, useState } from 'react';
-import { getClock } from '@/app/helpers/getClock';
+import { getClock } from '@/app/(helpers)/getClock';
 import { FaClock } from 'react-icons/fa6';
 
 const handleShowConfetti = () => {
